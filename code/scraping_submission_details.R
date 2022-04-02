@@ -133,3 +133,45 @@ map(all_submissions, "error") %>% compact() #empty list, because there are no er
 all_submissions_df <- all_submissions %>% 
                             purrr::map("result") %>%  #discard the error part
                             purrr::reduce(bind_rows)
+
+
+# the other detail column needs to be split into different columns
+# as not each submission contains all 6 details, the number and position of the elements in each sublist can change.
+# Therefore the searcher() mapper created next can be used to subset the list elements where a certain term appears
+# or otherwise assign a missing value. Do this for all six variables and create a tibble with six columns.
+
+
+searcher <- possibly(~{str_subset(.x, pattern = .y) %>%
+                       if(identical(., character(0))) NA_character_ else .}, # assign NA if empty (character(0))
+                                    otherwise = NA_character_)               # also assign missing if list element throws an error
+
+#create the tibble (and clean the columns a bit)
+details <- tibble(
+"organisation" = map2(.x = all_submissions_df$other_details, .y = "Organisation", searcher) %>% unlist() %>% 
+                      str_remove_all("Organisation\r\n  ") %>% str_squish(),
+
+"applicant"    = map2(.x = all_submissions_df$other_details, .y = "Name", searcher)    %>% unlist() %>% 
+                      str_remove_all("Name\r\n  |\r\n ") %>% str_squish(),
+
+"e_mail"       = map2(.x = all_submissions_df$other_details, .y = "E-mail", searcher)  %>% unlist() %>% 
+                      str_remove_all("E-mail") %>% str_squish(),
+
+"website"      = map2(.x = all_submissions_df$other_details, .y = "Website", searcher) %>% unlist() %>%
+                      str_remove_all("Website") %>% str_squish(),
+
+"route"        = map2(.x = all_submissions_df$other_details, .y = "Route", searcher)   %>% unlist() %>%
+                      str_remove_all("Route:\r\n      ") %>% str_squish(),
+"cluster"      = map2(.x = all_submissions_df$other_details, .y = "Cluster", searcher) %>% unlist() %>%
+                      str_remove_all("Cluster question:\r\n    ") %>% str_squish()
+)
+
+# join the details df with the all_submissions df
+
+all_submissions_df <- all_submissions_df %>% bind_cols(details) %>% 
+                                             select(-other_details) #list column not needed anymore
+
+
+# save the df
+#-------------------------------------------------
+
+saveRDS(all_submissions_df, file = "data/grand_submission.rds")
