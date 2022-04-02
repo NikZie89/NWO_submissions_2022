@@ -29,13 +29,13 @@ settings <- yaml::read_yaml('settings/settings.yml')
 # The objective is to scrape the details of the submissons (almost 400) for this years (2022) call for the NWO grands.
 # https://initiatieven.wetenschapsagenda.nl/initiatieven
 
-# As this is an annual grand, and the website only displays the submssions for the current call, the webscraper will 
+# As this is an annual grand, and the website only displays the submissions for the current call, the webscraper will 
 # probably be outdated over a few month.
-# With a bit of luck, the structure of the webpage does not change too much and the scraper can be used next year again.
+# With a bit of luck, the structure of the web page does not change too much and the scraper can be used next year again.
 
 # With that data it is possible to analyse which Universities submitted the most grand proposals this year,
 # which keywords and lines of research were the most popular and if the proposal descriptions tend to use certain language.
-# E.g. mentioning words like "inovative", "state of the art" etc.
+# E.g. mentioning words like "innovative", "state of the art" etc.
 
 # Over a few month it might also be possible to compare the winning proposals to those that did not make the cut.
 

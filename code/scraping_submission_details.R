@@ -1,5 +1,5 @@
 ####################################################################
-# Auteur: Niklas
+# Author: Niklas
 # Datum: 01.04.2022
 ####################################################################
 
@@ -11,6 +11,7 @@ conflict_prefer("filter", "dplyr")
 library(ivho)
 library(rvest)
 library(purrr)
+library(assertive)
 
 # De code hieronder zorgt er voor dat alle functies automatisch beschikbaar worden
 base::invisible(
@@ -38,9 +39,7 @@ settings <- yaml::read_yaml('settings/settings.yml')
 # then I can scrape those
 links_overview <- paste0("https://initiatieven.wetenschapsagenda.nl/initiatieven?page=", 0:32) # 33 pages, no new submissions will be added, because deadline is over
 
-
-# the firewall of my netwok does not let me scrape directly, so instead I download and save all the html pages first
-
+# the firewall of my network does not let me scrape directly, so instead I use the download.file function and save all the html pages locally at first
 
 # download html of all 33 overview pages.
 # after that I can load them in, and scrape links of each page to the individual proposals (over 300)
@@ -93,6 +92,8 @@ download_log <- purrr::map2(.x = all_links, .y = paste0(all_names,".html"), down
 
 map(download_log, "error") %>% compact() #returns empty list, because all errors are NULL. All links were working.
 
+
+
 # load all stored html pages into a list
 # using purrr here as well because it proved to be a bit faster than lapply
 html_initiatives <- 
@@ -114,13 +115,21 @@ html_initiatives <-
 # 5. Characteristics (Topic/ Route and cluster question)
 # 6. Applicant details if available (applying institution, PI, website of project) #at some pages those are not posted
 
-#First page as a test
-test_page <- html_initiatives[[1]]
 
-test_page %>% html_nodes(".articleHead__title") %>% html_text(trim = TRUE)    # Title
-test_page %>% html_nodes(".rs_preserve p+ p , p:nth-child(1)") %>% 
-              html_text(trim = TRUE) %>% 
-              glue::glue_collapse(sep = " ")                                  # Full abstract (collapse multiple paragraphs into one if necessary)
-(test_page %>% html_nodes("div.h3+ p") %>% html_text(trim = TRUE))[1]         # Keywords. This one was more complex. Gives me the content of all <p></p> that follow after a (closed) <div> tag with class h3. Usually the first time that occurs is after the keywords header, so I only select the content of the first <p></p>. Important is that the <p> tag is NOT inside of the <div> tag, but follows after the closing brackets </div>
+# scrape the details of the pages. Proceed with some additional cleaning afterwards.
+# scraper() function is sources from the scraper.R script in the function folder
 
-test_page %>% html_elements("p")
+scrape_safely <- purrr::safely(.f = ~{message(Sys.time()," - scraping page ", .y);
+                                      scraper(.x)})
+
+all_submissions <- purrr::map2(.x = html_initiatives,
+                               .y = 1:length(html_initiatives),
+                               scrape_safely)
+
+
+map(all_submissions, "error") %>% compact() #empty list, because there are no errors
+
+# combine the scraped details from all pages into one data frame
+all_submissions_df <- all_submissions %>% 
+                            purrr::map("result") %>%  #discard the error part
+                            purrr::reduce(bind_rows)
