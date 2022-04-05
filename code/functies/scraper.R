@@ -22,7 +22,7 @@ scraper <- function(html_page){
     stop("Input must have class xml_document and xml_node")}
   
   title    =  html_page %>% rvest::html_nodes(".articleHead__title") %>% rvest::html_text(trim = TRUE)%>%
-    if(identical(., character(0))) NA_character_ else .                               # Title
+    if(identical(., character(0))) NA_character_ else .                                       # Title
   
   link     =  html_page %>% html_nodes("link[rel=canonical]") %>% html_attr("href") %>%
     if(identical(., character(0))) NA_character_ else .
@@ -33,14 +33,17 @@ scraper <- function(html_page){
     if(identical(., character(0))) NA_character_ else .                                       # Full abstract (collapse multiple paragraphs into one if necessary)
   
   keywords =  (html_page %>% rvest::html_nodes("div.h3+ p") %>% rvest::html_text(trim = TRUE))[1] %>%
+    str_replace_all(pattern = ",  ", replacement = ";") %>%
     stringr::str_squish() %>%  
     if(identical(., character(0))) NA_character_ else .                                       # Keywords. This one was more complex. Gives me the content of all <p></p> that follow after a (closed) <div> tag with class h3. Usually the first time that occurs is after the keywords header, so I only select the content of the first <p></p>. Important is that the <p> tag is NOT inside of the <div> tag, but follows after the closing brackets </div>
   
   other_orgs =  (html_page %>% rvest::html_nodes("div.h3+ p") %>% rvest::html_text(trim = TRUE))[2] %>%
+    str_replace_all(pattern = ",  ", replacement = ";") %>%
     stringr::str_squish() %>%
     if(identical(., character(0))) NA_character_ else .        # Other organisations
   
-  other_details = html_page %>% rvest::html_nodes(".sidebar--content p") %>% rvest::html_text(trim = TRUE) %>% list()    # The rest as a list
+  other_details = html_page %>% rvest::html_nodes(".sidebar--content p") %>% 
+    rvest::html_text(trim = TRUE) %>% list()                   # The rest as a list
   
   # note: The if(identical(., character(0))) NA_character_ else . command at the end of each frase was added in case 
   # not all pages include all necessary html_nodes

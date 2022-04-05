@@ -8,7 +8,6 @@ rm(list=ls()); graphics.off()
 library(conflicted)
 library(tidyverse)
 conflict_prefer("filter", "dplyr")
-library(ivho)
 library(rvest)
 library(purrr)
 
@@ -46,5 +45,5 @@ settings <- yaml::read_yaml('settings/settings.yml')
 # The scripts
 #-----------------------------------------------------------------------------------------------------------------------
 
-#scraper to stroe the html page of each submission and 
+#scraper to store the html page of each submission and 
 source("code/scraping_submission_details.R")
